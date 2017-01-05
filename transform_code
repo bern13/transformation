@@ -8,8 +8,8 @@ library(GGally)
 library(data.table)
 
 ### state which columns you need to transform
-first_column = 3 
-last_column = 5
+first_column = 3
+last_column = 17
 columns_to_transform = seq(first_column,last_column,1)
 
 #########
@@ -17,14 +17,14 @@ columns_to_transform = seq(first_column,last_column,1)
 #########
 setwd("C:\\Users\\blabla")
 data_new = read.csv("blabla.csv")
-#View(data_new)
+View(data_new)
 
 lower=0.01
 upper=9.99
 powerrange = seq(lower,upper, 0.01)
 
 data=as.data.frame(data_new)
-best_input = data
+final_dataset = data
 #y-value is your Y variable, which should be the first column
 yvalue=as.numeric(data[,1])
 
@@ -33,31 +33,32 @@ op_power = matrix(0,nrow=2,ncol=ncol(data_new))
 colnames(op_power)=colnames(data_new)
 rownames(op_power)=c("power","correalation")
 
-#create a table to show final transformations
-data_trans = matrix(0,nrow=3,ncol=ncol(data_new))
+#create a table to show FINAL transformations
+data_trans = matrix(0,nrow=4,ncol=ncol(data_new))
 colnames(data_trans)=colnames(data_new)
-rownames(data_trans)=c("type", "transformation","correalation")
+rownames(data_trans)=c("type", "transformation","correalation","original correlation")
 
 #start transforming
 for(i in columns_to_transform)
 {
   print(i)
   col_selected =as.numeric(data[,i])
-  
+  current_correlation=cor(yvalue,col_selected)
+  data_trans[4,i]=current_correlation
   for (w in powerrange){
     print(w)
     transformed_col = (col_selected)^w
-    current_correlation=cor(yvalue,best_input[,i])
     new_correlation =cor(yvalue,transformed_col)
-  
-  if((abs(new_correlation))>(abs(current_correlation))){
-    best_input[,i]=transformed_col
-    op_power[1,i]=w
-    op_power[2,i]=new_correlation
-    data_trans[1,i]="power"
-    data_trans[2,i]= w
-    data_trans[3,i]=new_correlation
-      }
+    
+    if((abs(new_correlation))>(abs(current_correlation))){
+      current_correlation = new_correlation
+      final_dataset[,i]=transformed_col
+      op_power[1,i]=w
+      op_power[2,i]=new_correlation
+      data_trans[1,i]="power"
+      data_trans[2,i]= w
+      data_trans[3,i]=new_correlation
+    }
   }
 }
 
@@ -71,7 +72,6 @@ lower=0.01
 upper=9.99
 logrange = seq(lower,upper, 0.01)
 
-best_log_input = best_input
 #y-value is your Y variable, which should be the first column
 yvalue=as.numeric(data[,1])
 
@@ -85,26 +85,34 @@ for(i in columns_to_transform)
 {
   print(i)
   col_selected =as.numeric(data[,i])
+  new_correlation = as.numeric(data_trans[3,i])
   
   for (k in logrange){
-    # print(k)
+    print(k)
+    
     transformed_col = 1/(1+(exp((-k)*(col_selected))))
-    #current_correlation=cor(yvalue,best_log_input[,i])
-    new_correlation_log =cor(yvalue,transformed_col)
+    
+    if (sum(transformed_col)==nrow(data)){
+      new_correlation_log = 0
+    } else {
+      
+      new_correlation_log = cor(yvalue,transformed_col)}
+    
     
     if((abs(new_correlation_log))>(abs(new_correlation))){
-      best_log_input[,i]=transformed_col
+      new_correlation = new_correlation_log
+      final_dataset[,i]=transformed_col
       op_log[1,i]=k
       op_log[2,i]=new_correlation_log
       data_trans[1,i]="log"
       data_trans[2,i]= k
-      data_trans[3,i]=new_correlation_log
-    }
+      data_trans[3,i]=new_correlation_log}
+    
   }
+  
 }
-
-#View(best_log_input)
-#View(op_log)
+View(data_trans)
+View(final_dataset)
 
 ########################
 ##Negative Exponential##
@@ -127,15 +135,22 @@ for(i in columns_to_transform)
 {
   print(i)
   col_selected =as.numeric(data[,i])
+  new_correlation = as.numeric(data_trans[3,i])
   
   for (s in logrange){
     # print(s)
     transformed_col = (1-(exp((-s)*(col_selected))))
     #current_correlation=cor(yvalue,best_exp_input[,i])
-    new_correlation_neg =cor(yvalue,transformed_col)
+    if (sum(transformed_col)==nrow(data)){
+      new_correlation_neg = 0
+    } else {
+      
+      new_correlation_neg = cor(yvalue,transformed_col)}
+
     
     if((abs(new_correlation_neg))>(abs(new_correlation))){
-      best_exp_input[,i]=transformed_col
+      new_correlation = new_correlation_neg
+      final_dataset[,i]=transformed_col
       op_neg_exp[1,i]=s
       op_neg_exp[2,i]=new_correlation_neg
       data_trans[1,i]="negative exponential"
@@ -146,7 +161,7 @@ for(i in columns_to_transform)
 }
 
 View(data_trans)
-#View(best_exp_input)
-final_dataset <- best_exp_input
+# View(op_log)
+# View(op_power)
+# View(op_neg_exp)
 View(final_dataset)
-#View(op_neg_exp)
