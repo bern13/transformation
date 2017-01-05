@@ -1,3 +1,7 @@
+# Author: bern13
+# 8th Dec
+# purpose: MMM data transformation
+
 ####Transformation
 
 library(nnls)
